@@ -111,7 +111,7 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Link href="/upload" className="btn-primary">
+          <Link href="/sessions" className="btn-primary">
             Start New Analysis
           </Link>
         </div>
