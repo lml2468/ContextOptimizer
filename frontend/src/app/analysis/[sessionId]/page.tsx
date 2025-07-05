@@ -13,7 +13,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { apiClient } from '../../../utils/api';
 import { EvaluationReport, SessionInfo } from '../../../types';
-import LoadingSpinner from '../../../components/LoadingSpinner';
 import AppLayout from '../../../components/Layout/AppLayout';
 import { PageNavigationManager, NavigationActions } from '../../../utils/navigation';
 
@@ -40,11 +39,9 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
 
     const fetchData = async () => {
       try {
-        // Get session info
         const sessionData = await apiClient.getSessionInfo(sessionId);
         setSessionInfo(sessionData);
 
-        // If analysis is completed, get the report
         if (sessionData.has_analysis) {
           const reportData = await apiClient.getEvaluationReport(sessionId);
           setEvaluationReport(reportData);
@@ -57,25 +54,23 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
     };
 
     fetchData();
-
-    // Poll for updates if analysis is in progress
-    const interval = setInterval(() => {
-      if (sessionInfo?.status === 'analyzing' || sessionInfo?.status === 'processing') {
-        fetchData();
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [sessionId, sessionInfo?.status]);
+  }, [sessionId]);
 
   const startOptimization = async () => {
     if (!sessionId) return;
+    
     setOptimizationStarting(true);
     try {
-      const result = await apiClient.startOptimization(sessionId);
+      await apiClient.startOptimization(sessionId);
+      // Refresh session info to get updated has_optimization status
+      const updatedSessionInfo = await apiClient.getSessionInfo(sessionId);
+      setSessionInfo(updatedSessionInfo);
+      
+      // Navigate to optimization page
       router.push(`/optimization/${sessionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start optimization');
+    } finally {
       setOptimizationStarting(false);
     }
   };
@@ -194,7 +189,7 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
                   {PageNavigationManager.getBackLink(pathname, sessionId).label}
                 </button>
                 <h1 className="text-3xl font-bold text-gradient">
-                  {PageNavigationManager.getPageTitle(pathname, sessionId)}
+                  {PageNavigationManager.getPageTitle(pathname)}
                 </h1>
             </div>
             {sessionInfo?.has_optimization && (

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
 import SessionSidebar from './SessionSidebar';
 import { SessionInfo } from '../../types';
 import { apiClient } from '../../utils/api';
@@ -15,7 +14,6 @@ export default function AppLayout({ children, currentSessionId }: AppLayoutProps
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const pathname = usePathname();
 
   // Show sidebar on all pages except standalone upload page (which no longer exists)
   const showSidebar = true;
@@ -30,8 +28,9 @@ export default function AppLayout({ children, currentSessionId }: AppLayoutProps
     try {
       const recentSessions = await apiClient.getRecentSessions();
       setSessions(recentSessions);
-    } catch (error) {
-      console.error('Failed to fetch recent sessions:', error);
+    } catch {
+      // Handle error silently or show user-friendly message
+      setSessions([]);
     } finally {
       setLoading(false);
     }

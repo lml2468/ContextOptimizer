@@ -94,8 +94,8 @@ export default function SessionSidebar({
       if (currentSessionId === sessionId) {
         router.push('/sessions');
       }
-    } catch (error) {
-      console.error('Failed to delete session:', error);
+    } catch {
+      // Handle error with user-friendly message
       alert('Failed to delete session. Please try again.');
     } finally {
       setDeletingSessionId(null);

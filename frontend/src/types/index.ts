@@ -1,5 +1,5 @@
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -86,18 +86,16 @@ export interface OptimizedAgent {
   original_system_prompt: string;
   optimized_system_prompt: string;
   changes_summary: string;
-  tools: any[];
+  tools: AgentTool[];
 }
 
 export interface ToolFormatRecommendation {
   tool_name: string;
   current_format?: string;
   recommended_format: string;
-  format_example: any;
+  format_example: Record<string, unknown>;
   rationale: string;
 }
-
-
 
 export interface OptimizationResult {
   session_id: string;
@@ -113,7 +111,7 @@ export interface OptimizationResult {
 export interface AgentTool {
   name: string;
   description: string;
-  parameters: any;
+  parameters: Record<string, unknown>;
 }
 
 export interface AgentConfig {

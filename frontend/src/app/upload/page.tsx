@@ -69,9 +69,7 @@ export default function UploadPage() {
       const sessionId = uploadResult.session_id;
 
       // Start analysis
-      const analysisResult = await apiClient.startAnalysis(
-        sessionId
-      );
+      await apiClient.startAnalysis(sessionId);
 
       // Redirect to analysis page
       router.push(`/analysis/${sessionId}`);

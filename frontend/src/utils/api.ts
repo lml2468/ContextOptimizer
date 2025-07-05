@@ -1,7 +1,6 @@
 import { 
   ApiResponse, 
   SessionInfo, 
-  UploadResponse, 
   EvaluationReport, 
   OptimizationResult 
 } from '../types';
@@ -84,7 +83,7 @@ class ApiClient {
   }
 
   // Analysis
-  async startAnalysis(sessionId: string, focusAreas: string[] = []): Promise<ApiResponse<any>> {
+  async startAnalysis(sessionId: string, focusAreas: string[] = []): Promise<ApiResponse<unknown>> {
     return this.request(`/api/v1/analyze`, {
       method: 'POST',
       body: JSON.stringify({ session_id: sessionId, focus_areas: focusAreas }),

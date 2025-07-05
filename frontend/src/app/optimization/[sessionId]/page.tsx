@@ -14,7 +14,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { apiClient, downloadFile } from '../../../utils/api';
 import { OptimizationResult, SessionInfo } from '../../../types';
-import LoadingSpinner from '../../../components/LoadingSpinner';
 import AppLayout from '../../../components/Layout/AppLayout';
 import { PageNavigationManager, NavigationActions } from '../../../utils/navigation';
 
@@ -128,7 +127,12 @@ export default function OptimizationPage({ params }: { params: Promise<{ session
   if (loading) {
     return (
       <AppLayout currentSessionId={sessionId}>
-        <LoadingSpinner />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading optimization...</p>
+          </div>
+        </div>
       </AppLayout>
     );
   }
@@ -180,7 +184,7 @@ export default function OptimizationPage({ params }: { params: Promise<{ session
               {PageNavigationManager.getBackLink(pathname, sessionId).label}
             </button>
             <h1 className="text-2xl font-bold text-gradient">
-              {PageNavigationManager.getPageTitle(pathname, sessionId)}
+              {PageNavigationManager.getPageTitle(pathname)}
             </h1>
           </PageHeader>
 
@@ -214,7 +218,7 @@ export default function OptimizationPage({ params }: { params: Promise<{ session
               {PageNavigationManager.getBackLink(pathname, sessionId).label}
             </button>
             <h1 className="text-2xl font-bold text-gradient">
-              {PageNavigationManager.getPageTitle(pathname, sessionId)}
+              {PageNavigationManager.getPageTitle(pathname)}
             </h1>
           </PageHeader>
 
@@ -240,7 +244,7 @@ export default function OptimizationPage({ params }: { params: Promise<{ session
             {PageNavigationManager.getBackLink(pathname, sessionId).label}
           </button>
           <h1 className="text-2xl font-bold text-gradient">
-            {PageNavigationManager.getPageTitle(pathname, sessionId)}
+            {PageNavigationManager.getPageTitle(pathname)}
           </h1>
           <div className="ml-auto">
             <button onClick={downloadOptimization} className="btn-secondary inline-flex items-center">

@@ -153,7 +153,7 @@
            focus:outline-none focus:ring-4 focus:ring-neutral-500/25 focus:ring-offset-2;
   }
   
-  /* Card Components - Simplified */
+  /* Card Components */
   .card {
     @apply bg-white rounded-xl border border-neutral-200 
            transition-all duration-200 ease-in-out;
@@ -162,31 +162,6 @@
   .card-elevated {
     @apply bg-white rounded-xl border border-neutral-200 
            transition-all duration-200 ease-in-out;
-  }
-  
-  .card-interactive {
-    @apply card cursor-pointer hover:border-primary-300 hover:bg-primary-50/30
-           transition-all duration-200 ease-in-out;
-  }
-  
-  .card-glass {
-    @apply backdrop-blur-md bg-white/90 border border-neutral-200 rounded-xl;
-  }
-  
-  /* Input Components */
-  .input-field {
-    @apply w-full px-4 py-3 border border-neutral-300 rounded-xl 
-           focus:outline-none focus:ring-4 focus:ring-primary-500/25 focus:border-primary-500
-           transition-all duration-200 ease-in-out placeholder:text-neutral-400
-           disabled:bg-neutral-50 disabled:text-neutral-500 disabled:cursor-not-allowed;
-  }
-  
-  .input-error {
-    @apply border-red-500 focus:border-red-500 focus:ring-red-500/25;
-  }
-  
-  .input-success {
-    @apply border-green-500 focus:border-green-500 focus:ring-green-500/25;
   }
   
   /* Upload Zone */
@@ -232,47 +207,12 @@
            bg-clip-text text-transparent font-bold;
   }
   
-  .text-gradient-secondary {
-    @apply bg-gradient-to-r from-purple-500 to-primary-600 
-           bg-clip-text text-transparent font-semibold;
-  }
-  
-  .text-gradient-success {
-    @apply bg-gradient-to-r from-green-500 to-emerald-600 
-           bg-clip-text text-transparent font-semibold;
-  }
-  
   /* Loading Animations */
   .loading-spinner {
     @apply animate-spin rounded-full border-2 border-neutral-200 border-t-primary-600;
   }
   
-  .loading-pulse {
-    @apply animate-pulse bg-gradient-to-r from-neutral-200 via-neutral-300 to-neutral-200 
-           bg-[length:200%_100%] rounded-lg;
-  }
-  
-  .loading-dots {
-    @apply inline-flex space-x-1;
-  }
-  
-  .loading-dots > div {
-    @apply w-2 h-2 bg-primary-600 rounded-full animate-bounce;
-  }
-  
-  .loading-dots > div:nth-child(1) {
-    animation-delay: -0.32s;
-  }
-  
-  .loading-dots > div:nth-child(2) {
-    animation-delay: -0.16s;
-  }
-  
-  /* Glass Effect - Simplified */
-  .glass-effect {
-    @apply backdrop-blur-sm bg-white/80 border border-neutral-200;
-  }
-  
+  /* Glass Effect */
   .glass-effect-strong {
     @apply backdrop-blur-md bg-white/90 border border-neutral-200;
   }
@@ -305,16 +245,5 @@
   .progress-fill {
     @apply h-full bg-gradient-to-r from-primary-500 to-primary-600 
            transition-all duration-300 ease-in-out rounded-full;
-  }
-  
-  /* Tooltip */
-  .tooltip {
-    @apply absolute z-50 px-3 py-2 text-sm font-medium text-white 
-           bg-neutral-900 rounded-lg shadow-lg opacity-0 pointer-events-none
-           transition-opacity duration-200 ease-in-out;
-  }
-  
-  .tooltip.show {
-    @apply opacity-100;
   }
 }

@@ -1,4 +1,5 @@
 import { SessionInfo } from '../types';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 /**
  * 统一的Session导航管理工具
@@ -129,7 +130,7 @@ export class PageNavigationManager {
   /**
    * 获取页面标题
    */
-  static getPageTitle(currentPath: string, sessionId?: string): string {
+  static getPageTitle(currentPath: string): string {
     if (currentPath.startsWith('/analysis/')) {
       return 'Analysis Report';
     }
@@ -181,7 +182,7 @@ export class NavigationActions {
   /**
    * 导航到session的最佳页面
    */
-  static navigateToSession(router: any, session: SessionInfo): void {
+  static navigateToSession(router: AppRouterInstance, session: SessionInfo): void {
     const link = SessionNavigationManager.getSessionLink(session);
     router.push(link);
   }
@@ -189,7 +190,7 @@ export class NavigationActions {
   /**
    * 导航到上一页
    */
-  static navigateBack(router: any, currentPath: string, sessionId?: string): void {
+  static navigateBack(router: AppRouterInstance, currentPath: string, sessionId?: string): void {
     const { href } = PageNavigationManager.getBackLink(currentPath, sessionId);
     router.push(href);
   }
@@ -197,21 +198,21 @@ export class NavigationActions {
   /**
    * 导航到新建session
    */
-  static navigateToNewSession(router: any): void {
-    router.push('/upload');
+  static navigateToNewSession(router: AppRouterInstance): void {
+    router.push('/sessions');
   }
 
   /**
-   * 导航到sessions列表
+   * 导航到sessions页面
    */
-  static navigateToSessions(router: any): void {
+  static navigateToSessions(router: AppRouterInstance): void {
     router.push('/sessions');
   }
 
   /**
    * 导航到首页
    */
-  static navigateToHome(router: any): void {
+  static navigateToHome(router: AppRouterInstance): void {
     router.push('/');
   }
 } 

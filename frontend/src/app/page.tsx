@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { 
-  PlusIcon, 
-  InformationCircleIcon
+  PlusIcon
 } from '@heroicons/react/24/outline';
 
 export default function HomePage() {
@@ -42,9 +41,7 @@ export default function HomePage() {
         </div>
       </div>
 
-
-
-          {/* Features Section */}
+      {/* Features Section */}
       <div className="relative py-20">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-b from-white via-primary-50/30 to-white"></div>
@@ -96,10 +93,8 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          
-
         </div>
-        </div>
+      </div>
     </div>
   );
 }

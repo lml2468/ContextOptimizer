@@ -16,7 +16,6 @@ import {
   DocumentTextIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import Link from 'next/link';
 import { SessionNavigationManager, NavigationActions, PageNavigationManager } from '../../utils/navigation';
 
 // Session Results View Component
@@ -324,7 +323,6 @@ const NewSessionView = ({ onSessionCreated }: { onSessionCreated?: (sessionId: s
 
 export default function SessionsPage() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSession, setCurrentSession] = useState<SessionInfo | null>(null);
 
@@ -334,13 +332,13 @@ export default function SessionsPage() {
 
   const fetchSessions = async () => {
     try {
-      const allSessions = await apiClient.getRecentSessions();
-      setSessions(allSessions);
+      await apiClient.getRecentSessions();
       
       // 默认不选择任何session，显示upload界面
       setCurrentSession(null);
-    } catch (error) {
-      console.error('Failed to fetch sessions:', error);
+    } catch {
+      // Handle error silently or show user-friendly message
+      setCurrentSession(null);
     } finally {
       setLoading(false);
     }
@@ -381,16 +379,8 @@ export default function SessionsPage() {
     return SessionNavigationManager.getStatusText(session);
   };
 
-  const getSessionLink = (session: SessionInfo) => {
-    return SessionNavigationManager.getSessionLink(session);
-  };
-
   const formatDate = (dateString: string) => {
     return SessionNavigationManager.formatDate(dateString, false);
-  };
-
-  const handleSessionClick = (session: SessionInfo) => {
-    setCurrentSession(session);
   };
 
   const handleViewSession = (session: SessionInfo) => {
