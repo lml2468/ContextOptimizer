@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -25,6 +25,8 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
   const [error, setError] = useState<string | null>(null);
   const [optimizationStarting, setOptimizationStarting] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [progressStage, setProgressStage] = useState<'analyzing' | 'optimizing' | 'completed'>('analyzing');
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   useEffect(() => {
     const initializeParams = async () => {
@@ -34,27 +36,77 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
     initializeParams();
   }, [params]);
 
+  // Fetch session data and evaluation report
+  const fetchData = useCallback(async () => {
+    if (!sessionId) return;
+
+    try {
+      const sessionData = await apiClient.getSessionInfo(sessionId);
+      setSessionInfo(sessionData);
+
+      if (sessionData.has_analysis) {
+        const reportData = await apiClient.getEvaluationReport(sessionId);
+        setEvaluationReport(reportData);
+      }
+
+      // Update progress based on session status
+      if (sessionData.status === 'analyzing') {
+        setProgressStage('analyzing');
+        setProgressPercentage(33);
+      } else if (sessionData.status === 'analyzed') {
+        setProgressStage('optimizing');
+        setProgressPercentage(66);
+      } else if (sessionData.status === 'completed') {
+        setProgressStage('completed');
+        setProgressPercentage(100);
+      }
+
+      return sessionData;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return null;
+    }
+  }, [sessionId]);
+
+  // Initial data fetch
   useEffect(() => {
     if (!sessionId) return;
 
-    const fetchData = async () => {
-      try {
-        const sessionData = await apiClient.getSessionInfo(sessionId);
-        setSessionInfo(sessionData);
-
-        if (sessionData.has_analysis) {
-          const reportData = await apiClient.getEvaluationReport(sessionId);
-          setEvaluationReport(reportData);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
+    const initialFetch = async () => {
+      await fetchData();
+      setLoading(false);
     };
 
-    fetchData();
-  }, [sessionId]);
+    initialFetch();
+  }, [sessionId, fetchData]);
+
+  // Polling for progress updates
+  useEffect(() => {
+    if (!sessionId || loading) return;
+
+    const pollInterval = setInterval(async () => {
+      const sessionData = await fetchData();
+      
+      if (sessionData) {
+        // Auto-redirect when analysis is complete
+        if (sessionData.status === 'completed' && sessionData.has_analysis) {
+          // Small delay to show completion state
+          setTimeout(() => {
+            clearInterval(pollInterval);
+            // Stay on the analysis page to show results instead of redirecting
+          }, 1000);
+        }
+        
+        // Stop polling if there's an error
+        if (sessionData.status === 'error') {
+          clearInterval(pollInterval);
+        }
+      }
+    }, 3000); // Poll every 3 seconds
+
+    // Cleanup interval on unmount
+    return () => clearInterval(pollInterval);
+  }, [sessionId, loading, fetchData]);
 
   const startOptimization = async () => {
     if (!sessionId) return;
@@ -90,6 +142,19 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
     return 'text-red-600';
   };
 
+  const getProgressMessage = () => {
+    switch (progressStage) {
+      case 'analyzing':
+        return 'Analyzing your configuration and conversation data...';
+      case 'optimizing':
+        return 'Generating optimization recommendations...';
+      case 'completed':
+        return 'Analysis complete! Loading results...';
+      default:
+        return 'Processing your data...';
+    }
+  };
+
   if (loading) {
     return (
       <AppLayout currentSessionId={sessionId || undefined}>
@@ -120,19 +185,19 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
     );
   }
 
-  if (sessionInfo?.status === 'analyzing') {
+  if (sessionInfo?.status === 'analyzing' || sessionInfo?.status === 'analyzed') {
     return (
       <AppLayout currentSessionId={sessionId || undefined}>
         <div className="min-h-screen">
-          <header className="header-blur">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center py-8">
+          <header className="page-header">
+          <div className="page-header-content">
+              <div className="page-header-inner">
                 <h1 className="text-3xl font-bold text-gradient">Analysis in Progress</h1>
             </div>
           </div>
         </header>
 
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main className="main-content-with-fixed-header max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
               <div className="card-elevated max-w-2xl mx-auto p-12">
                 <div className="mb-8">
@@ -141,13 +206,29 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
                   </div>
                   <h2 className="text-3xl font-bold text-neutral-900 mb-4">Analyzing Your Multi-Agent System</h2>
                   <p className="text-lg text-neutral-600 mb-8 leading-relaxed">
-              Our AI is analyzing your configuration and conversation data. This typically takes 1-2 minutes.
-            </p>
+                    {getProgressMessage()}
+                  </p>
                 </div>
-                <div className="progress-bar">
-                  <div className="progress-fill w-1/3"></div>
+                <div className="progress-bar mb-4">
+                  <div 
+                    className="progress-fill transition-all duration-1000 ease-out" 
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
                 </div>
-                <p className="text-sm text-neutral-500 mt-4">Processing your data...</p>
+                <div className="flex justify-between text-sm text-neutral-500 mb-4">
+                  <span className={progressStage === 'analyzing' ? 'text-primary-600 font-medium' : ''}>
+                    Analysis
+                  </span>
+                  <span className={progressStage === 'optimizing' ? 'text-primary-600 font-medium' : ''}>
+                    Optimization
+                  </span>
+                  <span className={progressStage === 'completed' ? 'text-primary-600 font-medium' : ''}>
+                    Complete
+                  </span>
+                </div>
+                <p className="text-sm text-neutral-500">
+                  {progressPercentage}% complete • This typically takes 2-3 minutes
+                </p>
               </div>
           </div>
         </main>
@@ -177,9 +258,9 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
     <AppLayout currentSessionId={sessionId || undefined}>
       <div className="min-h-screen">
       {/* Header */}
-        <header className="header-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between py-8">
+        <header className="page-header">
+        <div className="page-header-content">
+            <div className="page-header-inner justify-between">
             <div className="flex items-center">
                 <button
                   onClick={() => NavigationActions.navigateBack(router, pathname, sessionId)}
@@ -205,7 +286,7 @@ export default function AnalysisPage({ params }: { params: Promise<{ sessionId: 
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="main-content-with-fixed-header max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Overall Score */}
         <div className="bg-white rounded-xl border border-neutral-200 p-8 mb-6">
           <div className="flex items-center justify-between">

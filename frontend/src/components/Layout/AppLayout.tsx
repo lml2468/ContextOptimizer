@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import SessionSidebar from './SessionSidebar';
+import { useState, useEffect, useCallback } from 'react';
 import { SessionInfo } from '../../types';
 import { apiClient } from '../../utils/api';
+import SessionSidebar from './SessionSidebar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -18,13 +18,8 @@ export default function AppLayout({ children, currentSessionId }: AppLayoutProps
   // Show sidebar on all pages except standalone upload page (which no longer exists)
   const showSidebar = true;
 
-  useEffect(() => {
-    if (showSidebar) {
-      fetchRecentSessions();
-    }
-  }, [showSidebar]);
-
-  const fetchRecentSessions = async () => {
+  // Fetch sessions function
+  const fetchRecentSessions = useCallback(async () => {
     try {
       const recentSessions = await apiClient.getRecentSessions();
       setSessions(recentSessions);
@@ -34,7 +29,47 @@ export default function AppLayout({ children, currentSessionId }: AppLayoutProps
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    if (showSidebar) {
+      fetchRecentSessions();
+    }
+  }, [showSidebar, fetchRecentSessions]);
+
+  // Polling for session updates
+  useEffect(() => {
+    if (!showSidebar) return;
+
+    const pollInterval = setInterval(async () => {
+      // Only poll if there are sessions that might be in progress
+      const hasActiveSession = sessions.some(session => 
+        session.status === 'analyzing' || 
+        session.status === 'analyzed' || 
+        session.status === 'optimizing' ||
+        session.status === 'processing'
+      );
+
+      if (hasActiveSession) {
+        await fetchRecentSessions();
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [showSidebar, sessions, fetchRecentSessions]);
+
+  // Update page header class based on sidebar state
+  useEffect(() => {
+    const pageHeaders = document.querySelectorAll('.page-header');
+    pageHeaders.forEach(header => {
+      if (sidebarCollapsed) {
+        header.classList.add('sidebar-collapsed');
+      } else {
+        header.classList.remove('sidebar-collapsed');
+      }
+    });
+  }, [sidebarCollapsed]);
 
   const handleSessionUpdate = () => {
     fetchRecentSessions();
@@ -45,7 +80,7 @@ export default function AppLayout({ children, currentSessionId }: AppLayoutProps
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50/30">
       {/* Sidebar */}
       <SessionSidebar
         sessions={sessions}
@@ -57,8 +92,8 @@ export default function AppLayout({ children, currentSessionId }: AppLayoutProps
       />
 
       {/* Main content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
-        sidebarCollapsed ? 'ml-16' : 'ml-80'
+      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out layout-transition ${
+        sidebarCollapsed ? 'ml-20' : 'ml-84'
       }`}>
         <div className="flex-1 overflow-y-auto">
           {children}

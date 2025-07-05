@@ -97,22 +97,37 @@
     @apply text-sm bg-neutral-100 px-1 py-0.5 rounded;
   }
   
-  /* Scrollbar Styling */
+  /* Enhanced Scrollbar Styling */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-neutral-100 rounded-full;
+    @apply bg-transparent;
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-neutral-300 rounded-full hover:bg-neutral-400;
+    @apply bg-neutral-300 hover:bg-neutral-400 rounded-full;
+    transition: background-color 0.2s ease-in-out;
   }
   
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-neutral-400;
+  }
+  
+  /* Thin scrollbar variant */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 hover:bg-neutral-400 rounded-full;
   }
 }
 
@@ -217,24 +232,116 @@
     @apply backdrop-blur-md bg-white/90 border border-neutral-200;
   }
   
-  /* Sidebar Styles */
+  /* Enhanced Sidebar Styles */
   .sidebar-item {
-    @apply flex items-center space-x-3 px-4 py-3 rounded-lg text-neutral-700 
-           hover:bg-neutral-100 hover:text-neutral-900 transition-all duration-200 ease-in-out
-           cursor-pointer;
+    @apply relative flex items-center space-x-3 px-4 py-3 rounded-xl text-neutral-700 
+           bg-white/60 hover:bg-white border border-neutral-200/60 hover:border-neutral-300
+           transition-all duration-300 ease-in-out cursor-pointer group
+           transform hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg;
   }
   
   .sidebar-item.active {
-    @apply bg-primary-100 text-primary-900 border border-primary-200;
+    @apply bg-gradient-to-r from-primary-50 to-accent-50 text-primary-900 
+           border-primary-200 shadow-lg shadow-primary-500/10;
   }
   
   .sidebar-item:hover {
-    @apply transform translate-x-1;
+    @apply shadow-md;
+  }
+  
+  /* Sidebar session item styles */
+  .session-item {
+    @apply relative rounded-xl border transition-all duration-300 ease-in-out cursor-pointer 
+           transform hover:scale-[1.02] hover:-translate-y-0.5 group;
+  }
+  
+  .session-item.active {
+    @apply bg-gradient-to-r from-primary-50 to-accent-50 border-primary-200 
+           shadow-lg shadow-primary-500/10;
+  }
+  
+  .session-item:not(.active) {
+    @apply bg-white/80 hover:bg-white border-neutral-200/60 hover:border-neutral-300 
+           hover:shadow-lg;
+  }
+  
+  .session-item-indicator {
+    @apply absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 
+           bg-gradient-to-b from-primary-500 to-accent-500 rounded-r-full shadow-lg;
+  }
+  
+  /* Status icon styles */
+  .status-icon {
+    @apply relative rounded-xl border shadow-sm;
+  }
+  
+  .status-icon.completed {
+    @apply p-2 bg-gradient-to-br from-green-50 to-emerald-100 border-green-200/50;
+  }
+  
+  .status-icon.processing {
+    @apply p-2 bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200/50;
+  }
+  
+  .status-icon.error {
+    @apply p-2 bg-gradient-to-br from-red-50 to-rose-100 border-red-200/50;
+  }
+  
+  .status-icon.default {
+    @apply p-2 bg-gradient-to-br from-neutral-50 to-neutral-100 border-neutral-200/50;
+  }
+  
+  .status-icon-pulse {
+    @apply absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse;
   }
   
   /* Header Styles */
   .header-blur {
     @apply backdrop-blur-sm bg-white/95 border-b border-neutral-200;
+  }
+  
+  /* Unified page header height */
+  .page-header {
+    @apply bg-white shadow-sm border-b border-gray-200;
+    height: 97px;
+    position: fixed;
+    top: 0;
+    left: 336px; /* Match sidebar width (21rem = 336px) */
+    right: 0;
+    z-index: 40; /* Higher than sidebar z-index: 30 */
+    backdrop-filter: blur(8px);
+    background-color: rgba(255, 255, 255, 0.95);
+    transition: left 0.3s ease-in-out; /* Smooth transition for sidebar collapse */
+  }
+  
+  /* Responsive header for collapsed sidebar */
+  .page-header.sidebar-collapsed {
+    left: 80px; /* Match collapsed sidebar width (5rem = 80px) */
+  }
+  
+  .page-header-content {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .page-header-inner {
+    @apply flex items-center;
+    min-height: 72px; /* 24px padding + 48px content = 72px total - matches sidebar */
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+  
+  /* Main content area with top margin for fixed header */
+  .main-content-with-fixed-header {
+    margin-top: 97px; /* Match header height */
+  }
+  
+  /* Sidebar header height - standardized */
+  .sidebar-header {
+    @apply relative border-b border-neutral-200/60 bg-gradient-to-r from-primary-50/30 to-accent-50/30;
+    height: 97px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
   }
   
   /* Progress Bar */
@@ -246,4 +353,76 @@
     @apply h-full bg-gradient-to-r from-primary-500 to-primary-600 
            transition-all duration-300 ease-in-out rounded-full;
   }
+  
+  /* Enhanced button hover effects */
+  .btn-hover-lift {
+    @apply transform transition-all duration-200 ease-in-out 
+           hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+  
+  /* Sidebar width utilities */
+  .w-84 {
+    width: 21rem; /* 336px */
+  }
+  
+  /* Corresponding margin utilities */
+  .ml-84 {
+    margin-left: 21rem; /* 336px */
+  }
+  
+  .ml-20 {
+    margin-left: 5rem; /* 80px */
+  }
+  
+  /* Enhanced loading spinner */
+  .loading-spinner-enhanced {
+    @apply relative;
+  }
+  
+  .loading-spinner-enhanced::before {
+    content: '';
+    @apply absolute inset-0 rounded-full border-4 border-primary-200 border-t-primary-600 
+           animate-spin;
+  }
+  
+  .loading-spinner-enhanced::after {
+    content: '';
+    @apply absolute inset-0 rounded-full border-4 border-transparent border-t-accent-400 
+           animate-spin;
+    animation-duration: 1.5s;
+    animation-direction: reverse;
+  }
+}
+
+/* Custom animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Smooth transitions for layout changes */
+.layout-transition {
+  transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+/* Enhanced focus states */
+.focus-ring {
+  @apply focus:outline-none focus:ring-4 focus:ring-primary-500/25 focus:ring-offset-2;
+}
+
+/* Gradient backgrounds */
+.gradient-bg-primary {
+  @apply bg-gradient-to-br from-primary-50 via-white to-accent-50/30;
+}
+
+.gradient-bg-sidebar {
+  @apply bg-gradient-to-b from-white via-white to-neutral-50/50;
 }

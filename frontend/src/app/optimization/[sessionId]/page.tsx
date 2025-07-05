@@ -19,9 +19,9 @@ import { PageNavigationManager, NavigationActions } from '../../../utils/navigat
 
 // Common UI Components
 const PageHeader = ({ children }: { children: React.ReactNode }) => (
-  <header className="bg-white shadow-sm border-b border-gray-200">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center py-6">
+  <header className="page-header">
+    <div className="page-header-content">
+      <div className="page-header-inner">
         {children}
       </div>
     </div>
@@ -51,7 +51,7 @@ const GeneratingMessage = ({ icon: Icon, title, message }: {
   title: string;
   message: string;
 }) => (
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main className="main-content-with-fixed-header max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div className="text-center">
       <Icon className="h-16 w-16 text-primary-600 mx-auto mb-6" />
       <h2 className="text-2xl font-bold text-gray-900 mb-4">{title}</h2>
@@ -188,7 +188,7 @@ export default function OptimizationPage({ params }: { params: Promise<{ session
             </h1>
           </PageHeader>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="main-content-with-fixed-header max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <CogIcon className="h-16 w-16 text-primary-600 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Generate Optimization</h2>
@@ -254,7 +254,7 @@ export default function OptimizationPage({ params }: { params: Promise<{ session
           </div>
         </PageHeader>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="main-content-with-fixed-header max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Expected Improvements */}
         {optimizationResult?.expected_improvements && optimizationResult.expected_improvements.length > 0 && (
           <div className="bg-white rounded-xl border border-neutral-200 p-8 mb-6">

@@ -415,9 +415,9 @@ export default function SessionsPage() {
     <AppLayout currentSessionId={currentSession?.session_id}>
       <div className="min-h-screen">
         {/* Header */}
-        <header className="header-blur">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between py-8">
+        <header className="page-header">
+          <div className="page-header-content">
+            <div className="page-header-inner justify-between">
               <div className="flex items-center">
                 <button
                   onClick={() => NavigationActions.navigateBack(router, '/sessions')}
@@ -433,7 +433,7 @@ export default function SessionsPage() {
         </header>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <main className="main-content-with-fixed-header max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {currentSession ? (
             <SessionResultsView 
               session={currentSession} 
