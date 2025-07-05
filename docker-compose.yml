@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  contextoptimizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # App Configuration
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/context_optimizer.log
+      
+      # Server Configuration
+      - HOST=0.0.0.0
+      - PORT=8000
+      
+      # File Storage
+      - DATA_DIR=/app/data
+      - SESSION_DIR=/app/data/sessions
+      - LOG_DIR=/app/logs
+      - MAX_FILE_SIZE=10485760
+      
+      # LLM Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - MAX_TOKENS=4000
+      - TEMPERATURE=0.1
+      
+      # LLM Cache Configuration
+      - USE_LLM_CACHE=true
+      - LLM_CACHE_TTL=3600
+      
+      # CORS Configuration
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+      
+      # Frontend Configuration
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+    volumes:
+      # Persist session data
+      - ./data:/app/data
+      # Persist logs
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  data:
+    driver: local
+  logs:
+    driver: local
