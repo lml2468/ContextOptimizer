@@ -56,6 +56,10 @@ class ApiClient {
     return this.request('/api/v1/sessions');
   }
 
+  async getRecentSessions(limit: number = 20): Promise<SessionInfo[]> {
+    return this.request(`/api/v1/sessions/recent?limit=${limit}`);
+  }
+
   async deleteSession(sessionId: string): Promise<{ success: boolean }> {
     return this.request(`/api/v1/session/${sessionId}`, { method: 'DELETE' });
   }

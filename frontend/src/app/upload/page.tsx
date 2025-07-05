@@ -1,10 +1,7 @@
 'use client';
 
-import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
-import Link from 'next/link';
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   CloudArrowUpIcon, 
   DocumentTextIcon, 
@@ -13,7 +10,7 @@ import {
   ArrowLeftIcon 
 } from '@heroicons/react/24/outline';
 import { apiClient } from '../../utils/api';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import { PageNavigationManager, NavigationActions } from '../../utils/navigation';
 
 interface UploadState {
   agentsConfig: File | null;
@@ -24,6 +21,7 @@ interface UploadState {
 
 export default function UploadPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<UploadState>({
     agentsConfig: null,
     messagesDataset: null,
@@ -97,82 +95,95 @@ export default function UploadPage() {
     description: string;
     file: File | null;
   }) => (
-    <div
-      className={`upload-zone ${file ? 'border-green-300 bg-green-50' : ''}`}
-      onDrop={(e) => handleDrop(e, type)}
-      onDragOver={handleDragOver}
-    >
-      <input
-        type="file"
-        accept=".json"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFileSelect(type, file);
-        }}
-        className="hidden"
-        id={`file-${type}`}
-      />
-      
-      <div className="flex flex-col items-center">
-        {file ? (
-          <CheckCircleIcon className="h-12 w-12 text-green-500 mb-4" />
-        ) : (
-          <CloudArrowUpIcon className="h-12 w-12 text-gray-400 mb-4" />
-        )}
+    <div className="bg-white rounded-xl border border-neutral-200 p-6 hover:border-neutral-300 transition-all duration-300">
+      <div
+        className={`upload-zone ${file ? 'border-green-400 bg-green-50/50' : ''}`}
+        onDrop={(e) => handleDrop(e, type)}
+        onDragOver={handleDragOver}
+      >
+        <input
+          type="file"
+          accept=".json"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileSelect(type, file);
+          }}
+          className="hidden"
+          id={`file-${type}`}
+        />
         
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-        <p className="text-gray-600 text-center mb-4">{description}</p>
-        
-        {file ? (
-          <div className="flex items-center text-green-600">
-            <DocumentTextIcon className="h-5 w-5 mr-2" />
-            <span className="font-medium">{file.name}</span>
-          </div>
-        ) : (
-          <label
-            htmlFor={`file-${type}`}
-            className="btn-primary cursor-pointer"
-          >
-            Choose File
-          </label>
-        )}
+        <div className="flex flex-col items-center">
+          {file ? (
+            <div className="p-3 bg-green-100 rounded-full mb-4">
+              <CheckCircleIcon className="h-10 w-10 text-green-600" />
+            </div>
+          ) : (
+            <div className="p-3 bg-gradient-to-br from-primary-100 to-purple-100 rounded-full mb-4">
+              <CloudArrowUpIcon className="h-10 w-10 text-primary-600" />
+            </div>
+          )}
+          
+          <h3 className="text-lg font-semibold text-neutral-900 mb-2">{title}</h3>
+          <p className="text-neutral-600 text-center mb-4 text-sm leading-relaxed">{description}</p>
+          
+          {file ? (
+            <div className="flex items-center justify-center p-3 bg-green-100 rounded-lg">
+              <DocumentTextIcon className="h-4 w-4 text-green-600 mr-2" />
+              <span className="font-medium text-green-800 text-sm">{file.name}</span>
+            </div>
+          ) : (
+            <label
+              htmlFor={`file-${type}`}
+              className="btn-primary cursor-pointer text-sm px-4 py-2"
+            >
+              Choose File or Drag & Drop
+            </label>
+          )}
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="header-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center py-6">
-            <Link href="/" className="flex items-center text-gray-600 hover:text-primary-600 mr-8">
+            <button
+              onClick={() => NavigationActions.navigateBack(router, pathname)}
+              className="btn-ghost flex items-center mr-6"
+            >
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
-              Back to Home
-            </Link>
-            <h1 className="text-2xl font-bold text-gradient">Upload Configuration</h1>
+              {PageNavigationManager.getBackLink(pathname).label}
+            </button>
+            <h1 className="text-2xl font-bold text-gradient">
+              {PageNavigationManager.getPageTitle(pathname)}
+            </h1>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl font-bold text-neutral-900 mb-4">
             Upload Your Multi-Agent System Configuration
           </h2>
-          <p className="text-lg text-gray-600">
-            Upload your agent configuration and conversation data to get started with context optimization
+          <p className="text-lg text-neutral-600 max-w-3xl mx-auto leading-relaxed">
+            Upload your agent configuration and conversation data to get started with AI-powered context optimization
           </p>
         </div>
 
         {state.error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
-            <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-3" />
-            <span className="text-red-700">{state.error}</span>
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
+            <div className="p-2 bg-red-100 rounded-full mr-3">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
+            </div>
+            <span className="text-red-800 font-medium">{state.error}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           <FileUploadZone
             type="agentsConfig"
             title="Agent Configuration"
@@ -188,37 +199,84 @@ export default function UploadPage() {
           />
         </div>
 
-
-
         {/* Submit Button */}
-        <div className="text-center">
-          <Button
-            onClick={handleSubmit}
-            disabled={!state.agentsConfig || !state.messagesDataset || state.uploading}
-            className={`px-8 py-3 ${
-              !state.agentsConfig || !state.messagesDataset || state.uploading
-                ? 'opacity-50 cursor-not-allowed'
-                : ''
-            }`}
-          >
-            {state.uploading ? (
-              <div className="flex items-center">
-                <LoadingSpinner size="sm" color="white" className="mr-2" />
-                Starting Analysis...
-              </div>
-            ) : (
-              'Start Analysis'
-            )}
-          </Button>
+        <div 
+          className="relative overflow-hidden rounded-xl p-8 text-center mb-12"
+          style={{
+            background: 'linear-gradient(135deg, #bfdbfe 0%, #c7d2fe 50%, #e9d5ff 100%)',
+            border: '2px solid #8b5cf6',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+          }}
+        >
+          {/* Background decoration */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(219, 234, 254, 0.5) 0%, rgba(243, 232, 255, 0.5) 100%)'
+            }}
+          ></div>
+          <div 
+            className="absolute top-0 right-0 w-32 h-32 rounded-full -translate-y-16 translate-x-16"
+            style={{
+              background: 'linear-gradient(135deg, rgba(165, 180, 252, 0.3) 0%, rgba(196, 181, 253, 0.3) 100%)'
+            }}
+          ></div>
+          <div 
+            className="absolute bottom-0 left-0 w-24 h-24 rounded-full translate-y-12 -translate-x-12"
+            style={{
+              background: 'linear-gradient(135deg, rgba(147, 197, 253, 0.3) 0%, rgba(165, 180, 252, 0.3) 100%)'
+            }}
+          ></div>
+          
+          <div className="relative max-w-2xl mx-auto">
+            <div 
+              className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
+              }}
+            >
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-neutral-900 mb-3">Ready to Start Analysis?</h3>
+            <p className="text-base text-neutral-600 mb-6 leading-relaxed">
+              Our AI will analyze your configuration and provide optimization recommendations
+            </p>
+            <button
+              onClick={handleSubmit}
+              disabled={!state.agentsConfig || !state.messagesDataset || state.uploading}
+              className="btn-primary inline-flex items-center text-base px-6 py-3"
+              style={{
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                transition: 'box-shadow 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+              }}
+            >
+              {state.uploading ? (
+                <>
+                  <div className="loading-spinner h-4 w-4 mr-2"></div>
+                  Starting Analysis...
+                </>
+              ) : (
+                'Start Analysis'
+              )}
+            </button>
+          </div>
         </div>
 
         {/* File Format Info */}
-        <div className="mt-12 card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">File Format Requirements</h3>
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+          <h3 className="text-xl font-semibold text-neutral-900 mb-6 text-center">File Format Requirements</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">agents_config.json</h4>
-              <pre className="text-sm text-gray-600 bg-gray-50 p-3 rounded overflow-x-auto">
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <h4 className="font-semibold text-neutral-900 mb-3">agents_config.json</h4>
+              <pre className="text-sm text-neutral-600 bg-white p-3 rounded-lg overflow-x-auto leading-relaxed">
 {`{
   "agents": [
     {
@@ -232,9 +290,9 @@ export default function UploadPage() {
               </pre>
             </div>
             
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">messages_dataset.json</h4>
-              <pre className="text-sm text-gray-600 bg-gray-50 p-3 rounded overflow-x-auto">
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <h4 className="font-semibold text-neutral-900 mb-3">messages_dataset.json</h4>
+              <pre className="text-sm text-neutral-600 bg-white p-3 rounded-lg overflow-x-auto leading-relaxed">
 {`{
   "messages": [
     {

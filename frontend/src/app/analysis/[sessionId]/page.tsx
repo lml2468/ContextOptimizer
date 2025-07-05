@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeftIcon, 
@@ -14,25 +14,39 @@ import {
 import { apiClient } from '../../../utils/api';
 import { EvaluationReport, SessionInfo } from '../../../types';
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import AppLayout from '../../../components/Layout/AppLayout';
+import { PageNavigationManager, NavigationActions } from '../../../utils/navigation';
 
-export default function AnalysisPage({ params }: { params: { sessionId: string } }) {
+export default function AnalysisPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [evaluationReport, setEvaluationReport] = useState<EvaluationReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [optimizationStarting, setOptimizationStarting] = useState(false);
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    const initializeParams = async () => {
+      const resolvedParams = await params;
+      setSessionId(resolvedParams.sessionId);
+    };
+    initializeParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
     const fetchData = async () => {
       try {
         // Get session info
-        const sessionData = await apiClient.getSessionInfo(params.sessionId);
+        const sessionData = await apiClient.getSessionInfo(sessionId);
         setSessionInfo(sessionData);
 
         // If analysis is completed, get the report
         if (sessionData.has_analysis) {
-          const reportData = await apiClient.getEvaluationReport(params.sessionId);
+          const reportData = await apiClient.getEvaluationReport(sessionId);
           setEvaluationReport(reportData);
         }
       } catch (err) {
@@ -52,13 +66,14 @@ export default function AnalysisPage({ params }: { params: { sessionId: string }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [params.sessionId, sessionInfo?.status]);
+  }, [sessionId, sessionInfo?.status]);
 
   const startOptimization = async () => {
+    if (!sessionId) return;
     setOptimizationStarting(true);
     try {
-      const result = await apiClient.startOptimization(params.sessionId);
-      router.push(`/optimization/${params.sessionId}`);
+      const result = await apiClient.startOptimization(sessionId);
+      router.push(`/optimization/${sessionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start optimization');
       setOptimizationStarting(false);
@@ -82,17 +97,20 @@ export default function AnalysisPage({ params }: { params: { sessionId: string }
 
   if (loading) {
     return (
+      <AppLayout currentSessionId={sessionId || undefined}>
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading analysis...</p>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   if (error) {
     return (
+      <AppLayout currentSessionId={sessionId || undefined}>
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -103,118 +121,141 @@ export default function AnalysisPage({ params }: { params: { sessionId: string }
           </Link>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   if (sessionInfo?.status === 'analyzing') {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm border-b border-gray-200">
+      <AppLayout currentSessionId={sessionId || undefined}>
+        <div className="min-h-screen">
+          <header className="header-blur">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center py-6">
-              <Link href="/upload" className="flex items-center text-gray-600 hover:text-primary-600 mr-8">
-                <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                Back to Upload
-              </Link>
-              <h1 className="text-2xl font-bold text-gradient">Analysis in Progress</h1>
+              <div className="flex items-center py-8">
+                <h1 className="text-3xl font-bold text-gradient">Analysis in Progress</h1>
             </div>
           </div>
         </header>
 
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <ClockIcon className="h-16 w-16 text-primary-600 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Analyzing Your Multi-Agent System</h2>
-            <p className="text-lg text-gray-600 mb-8">
-              Our AI is analyzing your configuration and conversation data. This typically takes 5-8 minutes.
+              <div className="card-elevated max-w-2xl mx-auto p-12">
+                <div className="mb-8">
+                  <div className="p-6 bg-gradient-to-br from-primary-100 to-accent-100 rounded-full w-24 h-24 mx-auto mb-6">
+                    <ClockIcon className="h-12 w-12 text-primary-600 mx-auto animate-spin" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-neutral-900 mb-4">Analyzing Your Multi-Agent System</h2>
+                  <p className="text-lg text-neutral-600 mb-8 leading-relaxed">
+              Our AI is analyzing your configuration and conversation data. This typically takes 1-2 minutes.
             </p>
-            <div className="animate-pulse bg-gray-200 h-2 rounded-full max-w-md mx-auto"></div>
+                </div>
+                <div className="progress-bar">
+                  <div className="progress-fill w-1/3"></div>
+                </div>
+                <p className="text-sm text-neutral-500 mt-4">Processing your data...</p>
+              </div>
           </div>
         </main>
       </div>
+      </AppLayout>
     );
   }
 
   if (!evaluationReport) {
     return (
+      <AppLayout currentSessionId={sessionId || undefined}>
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <InformationCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">No Analysis Available</h2>
           <p className="text-gray-600 mb-4">The analysis report is not yet available.</p>
-          <Link href="/upload" className="btn-primary">
-            Start New Analysis
+            <Link href="/sessions" className="btn-primary">
+              New Session
           </Link>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AppLayout currentSessionId={sessionId || undefined}>
+      <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="header-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
+            <div className="flex items-center justify-between py-8">
             <div className="flex items-center">
-              <Link href="/upload" className="flex items-center text-gray-600 hover:text-primary-600 mr-8">
+                <button
+                  onClick={() => NavigationActions.navigateBack(router, pathname, sessionId)}
+                  className="btn-ghost flex items-center mr-8"
+                >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                Back to Upload
-              </Link>
-              <h1 className="text-2xl font-bold text-gradient">Analysis Report</h1>
+                  {PageNavigationManager.getBackLink(pathname, sessionId).label}
+                </button>
+                <h1 className="text-3xl font-bold text-gradient">
+                  {PageNavigationManager.getPageTitle(pathname, sessionId)}
+                </h1>
             </div>
             {sessionInfo?.has_optimization && (
               <Link
-                href={`/optimization/${params.sessionId}`}
+                href={`/optimization/${sessionId}`}
                 className="btn-primary flex items-center"
               >
                 View Optimization
-                <ArrowRightIcon className="ml-2 h-4 w-4" />
+                  <ArrowRightIcon className="ml-2 h-5 w-5" />
               </Link>
             )}
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Overall Score */}
-        <div className="card mb-8">
+        <div className="bg-white rounded-xl border border-neutral-200 p-8 mb-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Overall Score</h2>
-              <p className="text-gray-600">{evaluationReport.summary}</p>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-neutral-900 mb-3">Overall Score</h2>
+              <p className="text-base text-neutral-600 leading-relaxed">{evaluationReport.summary}</p>
             </div>
-            <div className="text-right">
-              <div className={`text-4xl font-bold ${getScoreColor(evaluationReport.overall_score)}`}>
+            <div className="text-center ml-8">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-accent-100 rounded-full flex items-center justify-center mb-2">
+                  <div className={`text-2xl font-bold ${getScoreColor(evaluationReport.overall_score)}`}>
                 {evaluationReport.overall_score.toFixed(1)}
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-neutral-500">out of 10</div>
               </div>
-              <div className="text-gray-500">out of 10</div>
             </div>
           </div>
         </div>
 
         {/* Dimension Scores */}
-        <div className="card mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Evaluation Dimensions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl border border-neutral-200 p-8 mb-6">
+          <h3 className="text-xl font-bold text-neutral-900 mb-6">Evaluation Dimensions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {evaluationReport.dimensions.map((dimension, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{dimension.name}</h4>
-                  <span className={`text-lg font-bold ${getScoreColor(dimension.score)}`}>
+              <div key={index} className="bg-neutral-50 rounded-lg border border-neutral-200 p-5 hover:bg-neutral-100 transition-colors duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-neutral-900 text-base">{dimension.name}</h4>
+                  <div className="text-center">
+                    <div className={`text-xl font-bold ${getScoreColor(dimension.score)}`}>
                     {dimension.score.toFixed(1)}
-                  </span>
+                    </div>
+                    <div className="text-xs text-neutral-500">/ 10</div>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{dimension.description}</p>
+                <p className="text-sm text-neutral-600 mb-3 leading-relaxed">{dimension.description}</p>
                 
                 {dimension.issues.length > 0 && (
                   <div className="mb-3">
-                    <h5 className="text-xs font-medium text-gray-700 mb-1">Issues:</h5>
-                    <ul className="text-xs text-gray-600 space-y-1">
+                    <h5 className="text-xs font-semibold text-red-700 mb-2 uppercase tracking-wide">Issues:</h5>
+                    <ul className="text-sm text-neutral-600 space-y-1">
                       {dimension.issues.map((issue, i) => (
                         <li key={i} className="flex items-start">
-                          <span className="text-red-400 mr-1">•</span>
-                          {issue}
+                          <span className="text-red-500 mr-2 mt-1 flex-shrink-0">•</span>
+                          <span>{issue}</span>
                         </li>
                       ))}
                     </ul>
@@ -223,12 +264,12 @@ export default function AnalysisPage({ params }: { params: { sessionId: string }
                 
                 {dimension.recommendations.length > 0 && (
                   <div>
-                    <h5 className="text-xs font-medium text-gray-700 mb-1">Recommendations:</h5>
-                    <ul className="text-xs text-gray-600 space-y-1">
+                    <h5 className="text-xs font-semibold text-green-700 mb-2 uppercase tracking-wide">Recommendations:</h5>
+                    <ul className="text-sm text-neutral-600 space-y-1">
                       {dimension.recommendations.map((rec, i) => (
                         <li key={i} className="flex items-start">
-                          <span className="text-green-400 mr-1">•</span>
-                          {rec}
+                          <span className="text-green-500 mr-2 mt-1 flex-shrink-0">•</span>
+                          <span>{rec}</span>
                         </li>
                       ))}
                     </ul>
@@ -241,39 +282,39 @@ export default function AnalysisPage({ params }: { params: { sessionId: string }
 
         {/* Priority Issues */}
         {evaluationReport.priority_issues.length > 0 && (
-          <div className="card mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Priority Issues</h3>
+          <div className="bg-white rounded-xl border border-neutral-200 p-8 mb-6">
+            <h3 className="text-xl font-bold text-neutral-900 mb-6">Priority Issues</h3>
             <div className="space-y-4">
               {evaluationReport.priority_issues.map((issue, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={index} className="bg-red-50 rounded-lg border border-red-200 border-l-4 border-l-red-400 p-6">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(issue.priority)}`}>
+                      <span className={`status-badge ${getPriorityColor(issue.priority)}`}>
                         {issue.priority.toUpperCase()}
                       </span>
-                      <span className="ml-3 font-medium text-gray-900">{issue.category}</span>
+                      <span className="ml-3 text-lg font-semibold text-neutral-900">{issue.category}</span>
                     </div>
                   </div>
                   
-                  <p className="text-gray-700 mb-3">{issue.description}</p>
+                  <p className="text-neutral-700 mb-4 leading-relaxed">{issue.description}</p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <h5 className="font-medium text-gray-700 mb-1">Impact:</h5>
+                      <h5 className="font-semibold text-gray-700 mb-1">Impact:</h5>
                       <p className="text-gray-600">{issue.impact}</p>
                     </div>
                     <div>
-                      <h5 className="font-medium text-gray-700 mb-1">Solution:</h5>
+                      <h5 className="font-semibold text-gray-700 mb-1">Solution:</h5>
                       <p className="text-gray-600">{issue.solution}</p>
                     </div>
                   </div>
                   
                   {issue.affected_agents.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <h5 className="text-xs font-medium text-gray-700 mb-2">Affected Agents:</h5>
+                    <div className="mt-4 pt-3 border-t border-red-200">
+                      <h5 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Affected Agents:</h5>
                       <div className="flex flex-wrap gap-2">
                         {issue.affected_agents.map((agent, i) => (
-                          <span key={i} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                          <span key={i} className="px-2 py-1 bg-white border border-red-200 text-gray-700 rounded text-xs">
                             {agent}
                           </span>
                         ))}
@@ -288,9 +329,9 @@ export default function AnalysisPage({ params }: { params: { sessionId: string }
 
         {/* Overall Recommendations */}
         {evaluationReport.recommendations.length > 0 && (
-          <div className="card mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Overall Recommendations</h3>
-            <ul className="space-y-2">
+          <div className="bg-white rounded-xl border border-neutral-200 p-8 mb-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Overall Recommendations</h3>
+            <ul className="space-y-3">
               {evaluationReport.recommendations.map((rec, index) => (
                 <li key={index} className="flex items-start">
                   <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
@@ -302,40 +343,43 @@ export default function AnalysisPage({ params }: { params: { sessionId: string }
         )}
 
         {/* Next Steps */}
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Ready for Optimization?</h3>
-          <p className="text-gray-600 mb-6">
-            Get detailed optimization recommendations and ready-to-use configurations
+        <div className="bg-gradient-to-br from-primary-50 to-accent-50 rounded-xl border border-primary-200 p-8 text-center">
+          <div className="max-w-2xl mx-auto">
+            <h3 className="text-2xl font-bold text-neutral-900 mb-3">Ready for Optimization?</h3>
+            <p className="text-base text-neutral-600 mb-6 leading-relaxed">
+              Get detailed optimization recommendations and ready-to-use configurations tailored to your system
           </p>
           {sessionInfo?.has_optimization ? (
             <Link
-              href={`/optimization/${params.sessionId}`}
-              className="btn-primary inline-flex items-center"
+              href={`/optimization/${sessionId}`}
+                className="btn-primary inline-flex items-center text-base px-6 py-3"
             >
-              View Optimization
-              <ArrowRightIcon className="ml-2 h-4 w-4" />
+                View Optimization Results
+                <ArrowRightIcon className="ml-2 h-5 w-5" />
             </Link>
           ) : (
             <button
               onClick={startOptimization}
               disabled={optimizationStarting}
-              className="btn-primary inline-flex items-center"
+                className="btn-primary inline-flex items-center text-base px-6 py-3"
             >
               {optimizationStarting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="loading-spinner h-4 w-4 mr-2"></div>
                   Starting Optimization...
                 </>
               ) : (
                 <>
                   Generate Optimization
-                  <ArrowRightIcon className="ml-2 h-4 w-4" />
+                    <ArrowRightIcon className="ml-2 h-5 w-5" />
                 </>
               )}
             </button>
           )}
+          </div>
         </div>
       </main>
     </div>
+    </AppLayout>
   );
 }

@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     openai_base_url: Optional[str] = Field(default=None, env="OPENAI_BASE_URL")
     openai_model: str = Field(default="gpt-4o", env="OPENAI_MODEL")
-    max_tokens: int = Field(default=4000, env="MAX_TOKENS")
-    temperature: float = Field(default=0.1, env="TEMPERATURE")
+    max_tokens: int = Field(default=32000, env="MAX_TOKENS")
+    temperature: float = Field(default=0, env="TEMPERATURE")
     
     # LLM Cache Configuration
     use_llm_cache: bool = Field(default=True, env="USE_LLM_CACHE")

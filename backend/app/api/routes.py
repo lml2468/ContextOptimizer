@@ -432,7 +432,14 @@ async def list_sessions(
     ```
     """
     try:
-        sessions = await session_service.list_sessions(limit, offset)
+        # Use the original simple list method for backward compatibility
+        sessions_data = await session_service.list_sessions(limit, offset)
+        
+        # Handle both old and new return formats
+        if isinstance(sessions_data, dict):
+            sessions = sessions_data["sessions"]
+        else:
+            sessions = sessions_data
         
         return [
             SessionInfo(
@@ -451,6 +458,44 @@ async def list_sessions(
     except Exception as e:
         logger.error(f"List sessions failed: {e}")
         raise HTTPException(status_code=500, detail="List sessions failed")
+
+
+@router.get("/sessions/recent", response_model=List[SessionInfo], tags=["sessions"], summary="Get recent sessions for sidebar")
+async def get_recent_sessions(
+    limit: int = Query(20, description="Maximum number of recent sessions to return")
+):
+    """
+    Get recent sessions for sidebar display.
+    
+    Returns:
+        List of recent session information optimized for sidebar
+    """
+    try:
+        sessions_data = await session_service.list_sessions(limit, 0, sort_by="updated_at", sort_order="desc")
+        
+        # Handle both old and new return formats
+        if isinstance(sessions_data, dict):
+            sessions = sessions_data["sessions"]
+        else:
+            sessions = sessions_data
+        
+        return [
+            SessionInfo(
+                session_id=session.session_id,
+                status=session.status,
+                created_at=session.created_at,
+                updated_at=session.updated_at,
+                has_files=session.has_files(),
+                has_analysis=session.has_analysis(),
+                has_optimization=session.has_optimization(),
+                error_message=session.error_message
+            )
+            for session in sessions
+        ]
+        
+    except Exception as e:
+        logger.error(f"Get recent sessions failed: {e}")
+        raise HTTPException(status_code=500, detail="Get recent sessions failed")
 
 
 @router.delete("/session/{session_id}", response_model=Dict[str, Any], tags=["sessions"], summary="Delete a session", description="Delete a session and all associated data.")

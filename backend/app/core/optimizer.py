@@ -46,11 +46,11 @@ class ContextOptimizer:
             
             try:
                 response = await self.llm_service.call_llm(
-                    prompt=optimization_prompt,
-                    system_prompt=PromptTemplates.OPTIMIZATION_SYSTEM_PROMPT,
-                    max_tokens=4000,
-                    temperature=0.1
-                )
+                prompt=optimization_prompt,
+                system_prompt=PromptTemplates.OPTIMIZATION_SYSTEM_PROMPT,
+                max_tokens=4000,
+                temperature=0.1
+            )
                 logger.info("LLM response received")
             except Exception as llm_error:
                 logger.error(f"LLM call failed: {llm_error}")

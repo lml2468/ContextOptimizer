@@ -121,11 +121,21 @@ class SessionService:
             logger.error(f"Failed to delete session {session_id}: {e}")
             raise FileProcessingError(f"Failed to delete session: {e}")
     
-    async def list_sessions(self, limit: int = 50) -> List[Session]:
-        """List all sessions."""
+    async def list_sessions(
+        self, 
+        limit: int = 50, 
+        offset: int = 0,
+        status_filter: Optional[str] = None,
+        search_query: Optional[str] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        simple_format: bool = False
+    ) -> Dict[str, Any]:
+        """List sessions with filtering, searching, and pagination."""
         sessions = []
         
         try:
+            # Load all sessions
             for session_dir in self.session_dir.iterdir():
                 if session_dir.is_dir():
                     session_file = session_dir / "session.json"
@@ -137,19 +147,142 @@ class SessionService:
                         except Exception as e:
                             logger.warning(f"Failed to load session from {session_dir}: {e}")
             
-            # Sort by creation time (newest first)
-            sessions.sort(key=lambda s: s.created_at, reverse=True)
+            # Apply filters
+            filtered_sessions = sessions
             
-            # Apply limit
+            # Status filter
+            if status_filter:
+                filtered_sessions = [s for s in filtered_sessions if s.status.value == status_filter]
+            
+            # Search query filter
+            if search_query:
+                query_lower = search_query.lower()
+                filtered_sessions = [
+                    s for s in filtered_sessions 
+                    if (query_lower in s.session_id.lower() or
+                        (s.original_filenames and any(
+                            query_lower in filename.lower() 
+                            for filename in s.original_filenames.values()
+                        )) or
+                        (s.error_message and query_lower in s.error_message.lower()))
+                ]
+            
+            # Sort sessions
+            reverse_order = sort_order.lower() == "desc"
+            if sort_by == "created_at":
+                filtered_sessions.sort(key=lambda s: s.created_at, reverse=reverse_order)
+            elif sort_by == "updated_at":
+                filtered_sessions.sort(key=lambda s: s.updated_at, reverse=reverse_order)
+            elif sort_by == "status":
+                filtered_sessions.sort(key=lambda s: s.status.value, reverse=reverse_order)
+            
+            # Calculate pagination
+            total_count = len(filtered_sessions)
+            total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
+            current_page = (offset // limit) + 1 if limit > 0 else 1
+            
+            # Apply pagination
             if limit > 0:
-                sessions = sessions[:limit]
+                paginated_sessions = filtered_sessions[offset:offset + limit]
+            else:
+                paginated_sessions = filtered_sessions
             
-            logger.info(f"Listed {len(sessions)} sessions")
-            return sessions
+            logger.info(f"Listed {len(paginated_sessions)} sessions (total: {total_count})")
+            
+            # Return simple format for backward compatibility
+            if simple_format or (not status_filter and not search_query):
+                return paginated_sessions
+            
+            return {
+                "sessions": paginated_sessions,
+                "pagination": {
+                    "total_count": total_count,
+                    "total_pages": total_pages,
+                    "current_page": current_page,
+                    "page_size": limit,
+                    "has_next": offset + limit < total_count,
+                    "has_previous": offset > 0
+                },
+                "filters": {
+                    "status_filter": status_filter,
+                    "search_query": search_query,
+                    "sort_by": sort_by,
+                    "sort_order": sort_order
+                }
+            }
             
         except Exception as e:
             logger.error(f"Failed to list sessions: {e}")
             raise FileProcessingError(f"Failed to list sessions: {e}")
+    
+    async def get_session_statistics(self) -> Dict[str, Any]:
+        """Get session statistics."""
+        try:
+            sessions = []
+            for session_dir in self.session_dir.iterdir():
+                if session_dir.is_dir():
+                    session_file = session_dir / "session.json"
+                    if session_file.exists():
+                        try:
+                            session_data = await FileUtils.load_json(session_file)
+                            session = Session(**session_data)
+                            sessions.append(session)
+                        except Exception as e:
+                            logger.warning(f"Failed to load session from {session_dir}: {e}")
+            
+            # Calculate statistics
+            total_sessions = len(sessions)
+            status_counts = {}
+            
+            for session in sessions:
+                status = session.status.value
+                status_counts[status] = status_counts.get(status, 0) + 1
+            
+            # Calculate success rate
+            completed_sessions = status_counts.get("completed", 0)
+            success_rate = (completed_sessions / total_sessions * 100) if total_sessions > 0 else 0
+            
+            # Recent activity (last 7 days)
+            from datetime import datetime, timedelta
+            seven_days_ago = datetime.utcnow() - timedelta(days=7)
+            recent_sessions = [s for s in sessions if s.created_at >= seven_days_ago]
+            
+            stats = {
+                "total_sessions": total_sessions,
+                "status_counts": status_counts,
+                "success_rate": round(success_rate, 1),
+                "recent_sessions_count": len(recent_sessions),
+                "has_analysis_count": len([s for s in sessions if s.has_analysis()]),
+                "has_optimization_count": len([s for s in sessions if s.has_optimization()])
+            }
+            
+            logger.info(f"Generated session statistics: {stats}")
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Failed to get session statistics: {e}")
+            raise FileProcessingError(f"Failed to get session statistics: {e}")
+    
+    async def bulk_delete_sessions(self, session_ids: List[str]) -> Dict[str, Any]:
+        """Delete multiple sessions."""
+        results = {
+            "deleted": [],
+            "failed": [],
+            "total": len(session_ids)
+        }
+        
+        for session_id in session_ids:
+            try:
+                success = await self.delete_session(session_id)
+                if success:
+                    results["deleted"].append(session_id)
+                else:
+                    results["failed"].append({"session_id": session_id, "error": "Session not found"})
+            except Exception as e:
+                results["failed"].append({"session_id": session_id, "error": str(e)})
+        
+        logger.info(f"Bulk delete completed: {len(results['deleted'])} deleted, {len(results['failed'])} failed")
+        return results
     
     async def get_session_file_path(self, session_id: str, filename: str) -> Path:
         """Get path to session file."""

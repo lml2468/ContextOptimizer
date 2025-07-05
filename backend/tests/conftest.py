@@ -92,7 +92,7 @@ def sample_evaluation_result():
         ],
         "priority_issues": [
             {"category": "prompt_clarity", "priority": "medium", "description": "Test issue"}
-        ],
+                ],
         "summary": "Overall good performance",
         "recommendations": ["Improve context flow"]
     }

@@ -174,13 +174,13 @@ class ValidationUtils:
     def _normalize_message_fields(message: Dict[str, Any], index: int) -> Dict[str, Any]:
         """Normalize message fields with type mapping."""
         normalized_message = {}
-        
+                
         # Handle ID field
         normalized_message["id"] = message.get("id", f"msg_{index}")
-        
+                
         # Handle content field
         normalized_message["content"] = message.get("content", "")
-        
+                
         # Handle type field with role mapping
         if "type" in message:
             normalized_message["type"] = message["type"]
@@ -198,12 +198,12 @@ class ValidationUtils:
             logger.debug(f"Mapped role '{role}' to type '{normalized_message['type']}' for message {index}")
         else:
             raise ValidationError(f"Message {index} missing required field: type or role")
-        
+                
         # Validate message type
         valid_types = ["human", "ai", "tool", "system"]
         if normalized_message["type"] not in valid_types:
             raise ValidationError(f"Message {index} has invalid type: {normalized_message['type']}")
-        
+                
         # Handle optional fields
         optional_fields = ["name", "example", "tool_call_id"]
         for field in optional_fields:
@@ -216,7 +216,7 @@ class ValidationUtils:
                 normalized_message["name"] = message["role"]
             elif normalized_message["type"] == "tool" and "tool_name" in message:
                 normalized_message["name"] = message["tool_name"]
-        
+                
         # Handle tool calls
         if "tool_calls" in message:
             normalized_message["tool_calls"] = ValidationUtils._normalize_tool_calls(message["tool_calls"])
@@ -231,7 +231,7 @@ class ValidationUtils:
     def _normalize_tool_calls(tool_calls: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Normalize tool calls format."""
         normalized_tool_calls = []
-        
+                    
         for tool_call in tool_calls:
             if not isinstance(tool_call, dict):
                 continue
@@ -263,7 +263,7 @@ class ValidationUtils:
                     normalized_tool_call["args"] = {"raw_arguments": args_str}
             else:
                 normalized_tool_call["args"] = {}
-            
+                        
             # Handle tool call ID
             if "id" in tool_call:
                 normalized_tool_call["id"] = tool_call["id"]
@@ -271,9 +271,9 @@ class ValidationUtils:
                 normalized_tool_call["id"] = tool_call["function"]["id"]
             else:
                 normalized_tool_call["id"] = f"call_{len(normalized_tool_calls)}"
-            
+                        
             normalized_tool_calls.append(normalized_tool_call)
-        
+                    
         return normalized_tool_calls
     
     @staticmethod
@@ -320,7 +320,7 @@ class ValidationUtils:
             # Check for missing tools
             ValidationUtils._check_missing_tools(
                 config_tools, message_tools, validation_results
-            )
+                )
             
             # Check conversation flow
             flow_issues = ValidationUtils._check_conversation_flow(messages_dataset)
@@ -368,8 +368,8 @@ class ValidationUtils:
         """Check for conversation flow issues."""
         issues = []
         messages = messages_dataset.messages
-        
-        # Check for tool responses without tool calls
+            
+            # Check for tool responses without tool calls
         for i, curr_msg in enumerate(messages):
             if curr_msg.type == MessageType.TOOL and curr_msg.tool_call_id:
                 # Find corresponding tool call
